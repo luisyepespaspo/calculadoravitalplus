@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Calculadora de comisiones</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E💰%3C/text%3E%3C/svg%3E">
+<style>
+:root{--bg:#f6f4ef;--card:#fff;--ink:#1f2933;--muted:#65717d;--line:#e4e0d6;--brand:#0f766e;--brand-ink:#fff;--soft:#e3f3f1;--gold:#b45309;--gold-soft:#fef3c7;--warn:#b42318;--warn-soft:#fdecea;color-scheme:light}
+@media(prefers-color-scheme:dark){:root{--bg:#14181b;--card:#1d2327;--ink:#eef1f3;--muted:#9aa6b1;--line:#2d363c;--brand:#2dd4bf;--brand-ink:#06201c;--soft:#12332f;--gold:#fbbf24;--gold-soft:#3a2f10;--warn:#ff8a7a;--warn-soft:#3a1f1b;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:18px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+.wrap{max-width:680px;margin:0 auto;padding:18px 16px 60px}
+h1{margin:6px 0 4px;font-size:1.7rem}
+.sub{margin:0 0 16px;color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:16px}
+.card h2{margin:0 0 6px;font-size:1.25rem}
+label{display:block;font-weight:600;margin:6px 0}
+input{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:2px solid var(--line);border-radius:12px;padding:12px 14px;min-height:60px;font-size:1.7rem;font-weight:700}
+input:focus,button:focus-visible{outline:3px solid var(--brand);outline-offset:1px}
+.words{color:var(--muted);min-height:1.4em;margin-top:4px}
+.err{color:var(--warn);background:var(--warn-soft);border-radius:10px;padding:8px 12px;margin-top:10px}
+.btn{display:block;width:100%;min-height:56px;border:0;border-radius:14px;background:var(--brand);color:var(--brand-ink);font:inherit;font-weight:700;font-size:1.15rem;cursor:pointer;margin-top:14px}
+.btn.ghost{background:transparent;color:var(--ink);border:2px solid var(--line)}
+.btn.danger{background:var(--warn);color:#fff}
+.btns{display:grid;gap:10px;margin-top:6px}
+@media(min-width:560px){.btns.two{grid-template-columns:1fr 1fr}}
+.when{color:var(--muted);margin:0 0 12px}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.kpis div{background:var(--bg);border-radius:14px;padding:12px}
+.kpis .n{font-size:1.45rem;font-weight:800;overflow-wrap:anywhere}.kpis .n.c{color:var(--brand)}.kpis .l{color:var(--muted);font-size:.9rem}
+.falta{background:var(--gold-soft);border-radius:14px;padding:12px 14px;margin-bottom:12px}
+.falta .l{color:var(--gold);font-weight:600;font-size:.95rem}.falta .n{font-size:1.4rem;font-weight:800;margin-bottom:6px}.falta .n:last-child{margin-bottom:0}
+.falta.top{background:var(--soft)}.falta.top .l{color:var(--brand)}
+.hrow{display:flex;justify-content:space-between;gap:10px;border-top:1px solid var(--line);padding:12px 0}.hrow:first-of-type{border-top:0}
+.hrow .d{color:var(--muted);font-size:.9rem}.hrow b{white-space:nowrap}
+.step{padding:10px 0;border-top:1px solid var(--line)}.step:first-of-type{border-top:0}
+.st{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap}
+.rng{color:var(--muted);font-size:.9rem}
+.tag{font-size:.85rem;font-weight:700;border-radius:999px;padding:2px 10px;background:var(--bg);color:var(--muted)}
+.step.done .tag{background:var(--soft);color:var(--brand)}.step.now .tag{background:var(--brand);color:var(--brand-ink)}
+.track{height:12px;border-radius:99px;background:var(--bg);margin-top:8px;overflow:hidden;border:1px solid var(--line)}
+.fill{height:100%;background:var(--line);border-radius:99px}.step.done .fill,.step.now .fill{background:var(--brand)}
+.note{color:var(--muted);font-size:.92rem;margin:0 0 6px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--brand);color:var(--brand-ink);padding:12px 20px;border-radius:999px;font-weight:700;box-shadow:0 6px 20px rgba(0,0,0,.25);z-index:20;text-align:center;max-width:92vw}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Calculadora de comisiones</h1>
+  <p class="sub">Escribe cuánto llevas cobrado y mira tu comisión.</p>
+
+  <section class="card" id="calc">
+    <label for="inp">Total cobrado en el mes, hasta hoy <span style="font-weight:400;color:var(--muted)">(pesos, número completo)</span></label>
+    <input id="inp" type="text" inputmode="numeric" autocomplete="off" placeholder="Ej: 41.000.000">
+    <div class="words" id="words"></div>
+    <div id="err"></div>
+    <button class="btn" id="go" type="button">Calcular</button>
+  </section>
+
+  <section class="card" id="last" hidden></section>
+  <section class="card" id="histcard" hidden><h2>Consultas anteriores</h2><div id="hist"></div></section>
+
+  <section class="card">
+    <h2>Topes de comisión</h2>
+    <p class="note">Cada porcentaje se aplica solo a la parte del cobro que cae dentro de su tramo.</p>
+    <div id="ladder"></div>
+  </section>
+</div>
+<div id="toast" class="toast" hidden></div>
+<script>
+// ===== TOPES: edítalos aquí si cambian =====
+var LEVELS=[
+  {from:0,       to:25000000, rate:0},
+  {from:25000000,to:32000000, rate:0.12},
+  {from:32000000,to:37000000, rate:0.13},
+  {from:37000000,to:42000000, rate:0.14},
+  {from:42000000,to:Infinity, rate:0.15}
+];
+var KEY="comisiones:consultas:v1",hist=[],tT=null,LAST=LEVELS.length-1;
+function load(){try{var r=localStorage.getItem(KEY);hist=r?JSON.parse(r):[];if(!Array.isArray(hist))hist=[]}catch(e){hist=[]}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(hist))}catch(e){}}
+function fmt(n){return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g,".")}
+function money(n){return "$"+fmt(n)}
+function pct(r){return Math.round(r*100)+"%"}
+function mm(n){return String(Math.round(n/1e5)/10).replace(".",",")+" M"}
+function comm(v){var t=0;LEVELS.forEach(function(l){t+=Math.max(0,Math.min(v,l.to)-l.from)*l.rate});return Math.round(t)}
+function level(v){var k=0;LEVELS.forEach(function(l,i){if(i>0&&v>l.from)k=i});return k}
+function info(t){var lv=level(t);return {total:t,lv:lv,rate:LEVELS[lv].rate,comm:comm(t),next:lv<LAST?LEVELS[lv+1]:null,toNext:lv<LAST?LEVELS[lv+1].from-t:0,toLast:lv<LAST?LEVELS[LAST].from-t:0,over:lv===LAST?t-LEVELS[LAST].from:0}}
+function faltantes(i){
+  var L=LEVELS[LAST];
+  if(!i.next)return [["Ya llegaste al último tope","Lo superaste por "+money(i.over)]];
+  if(i.next===L)return [["Falta para el próximo tope, que es el último ("+money(L.from)+" → "+pct(L.rate)+")",money(i.toNext)]];
+  return [["Falta para el próximo tope ("+money(i.next.from)+" → "+pct(i.next.rate)+")",money(i.toNext)],["Falta para el último tope ("+money(L.from)+" → "+pct(L.rate)+")",money(i.toLast)]];
+}
+function words(v){if(!v)return "";if(v>=1e6){var m=Math.round(v/1e6*100)/100;return "= "+String(m).replace(".",",")+(m===1?" millón":" millones")}return v>=1000?"= "+fmt(v/1000)+" mil":""}
+function pm(s){return parseInt(String(s).replace(/\D/g,""),10)||0}
+function when(ts){return new Date(ts).toLocaleString("es-CO",{day:"numeric",month:"short",year:"numeric",hour:"numeric",minute:"2-digit"})}
+function h(tag,a){var e=document.createElement(tag);for(var k in (a||{})){if(k==="text")e.textContent=a[k];else if(k.slice(0,2)==="on")e.addEventListener(k.slice(2),a[k]);else e.setAttribute(k,a[k])}
+  for(var i=2;i<arguments.length;i++){var c=arguments[i];if(c)e.appendChild(typeof c==="string"?document.createTextNode(c):c)}return e}
+function toast(m){var t=document.getElementById("toast");t.textContent=m;t.hidden=false;clearTimeout(tT);tT=setTimeout(function(){t.hidden=true},2800)}
+
+// ---- Texto para WhatsApp ----
+function shareText(c){
+  var i=info(c.total),L=["💰 *Mi comisión*","📅 "+when(c.ts),"","Cobrado hasta la fecha: *"+money(c.total)+"*","Comisión acumulada: *"+money(i.comm)+"*","Tramo actual: "+(i.lv===0?"sin comisión todavía":pct(i.rate)),""];
+  faltantes(i).forEach(function(f){L.push(f[0]+": "+f[1])});
+  return L.join("\n");
+}
+// ---- Imagen ----
+function rr(g,x,y,w,hh,r,c){g.fillStyle=c;g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+hh,r);g.arcTo(x+w,y+hh,x,y+hh,r);g.arcTo(x,y+hh,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();g.fill()}
+function tx(g,s,x,y,wt,size,col,maxW,al){var F="system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif";g.font=wt+" "+size+"px "+F;
+  while(maxW&&g.measureText(s).width>maxW&&size>14){size-=2;g.font=wt+" "+size+"px "+F}
+  g.fillStyle=col;g.textAlign=al||"left";g.fillText(s,x,y)}
+function drawImage(c){
+  var i=info(c.total),W=1080,H=1560,cv=document.createElement("canvas");cv.width=W;cv.height=H;var g=cv.getContext("2d");
+  g.fillStyle="#f6f4ef";g.fillRect(0,0,W,H);
+  g.fillStyle="#0f766e";g.fillRect(0,0,W,200);
+  tx(g,"Mi comisión",60,95,"700",64,"#ffffff");
+  tx(g,when(c.ts),60,160,"400",34,"#d6f1ee");
+  rr(g,40,230,1000,430,28,"#ffffff");
+  tx(g,"Comisión acumulada hasta la fecha",80,300,"400",32,"#65717d",920);
+  tx(g,money(i.comm),80,400,"800",110,"#0f766e",920);
+  tx(g,"Cobrado hasta la fecha",80,475,"400",32,"#65717d",920);
+  tx(g,money(c.total),80,555,"700",72,"#1f2933",920);
+  tx(g,"Tramo actual: "+(i.lv===0?"sin comisión todavía":pct(i.rate)),80,625,"600",36,"#1f2933",920);
+  var fl=faltantes(i),fh=70+fl.length*140;
+  rr(g,40,690,1000,fh,28,i.next?"#fef3c7":"#e3f3f1");
+  var y=755;
+  fl.forEach(function(f){tx(g,f[0],80,y,"600",30,i.next?"#b45309":"#0f766e",920);tx(g,f[1],80,y+66,"800",58,"#1f2933",920);y+=140});
+  var ty=690+fh+40;
+  rr(g,40,ty,1000,100+LEVELS.length*74,28,"#ffffff");
+  tx(g,"Topes de comisión",80,ty+65,"700",38,"#1f2933");
+  LEVELS.forEach(function(l,k){
+    var done=l.to!==Infinity&&c.total>=l.to,now=k===i.lv&&!done,ry=ty+100+k*74;
+    if(now)rr(g,60,ry,960,64,16,"#e3f3f1");
+    var lab=(k===0?"Sin comisión":pct(l.rate))+"  ·  "+(l.to===Infinity?"desde "+mm(l.from):k===0?"hasta "+mm(l.to):mm(l.from)+" a "+mm(l.to));
+    var tag=done?"✓ Superado":now?"● Estás aquí":"Faltan "+money(l.from-c.total);
+    tx(g,lab,84,ry+44,now?"700":"500",30,done||now?"#0f766e":"#65717d",520);
+    tx(g,tag,996,ry+44,now?"700":"500",28,done||now?"#0f766e":"#65717d",400,"right");
+  });
+  return cv;
+}
+function blobOf(c){return new Promise(function(r){drawImage(c).toBlob(r,"image/png")})}
+function fname(c){var d=new Date(c.ts);return "comision-"+d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")+".png"}
+function downloadImg(c){blobOf(c).then(function(b){var a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=fname(c);document.body.appendChild(a);a.click();a.remove();toast("Imagen descargada")})}
+function shareImg(c){blobOf(c).then(function(b){var f=new File([b],fname(c),{type:"image/png"});
+  if(navigator.canShare&&navigator.canShare({files:[f]}))navigator.share({files:[f],title:"Mi comisión"}).catch(function(){});else downloadImg(c)})}
+function canShareImg(){try{return !!(navigator.canShare&&navigator.canShare({files:[new File([""],"a.png",{type:"image/png"})]}))}catch(e){return false}}
+
+// ---- Pantalla ----
+var inp=document.getElementById("inp");
+inp.addEventListener("input",function(){var v=pm(inp.value);inp.value=v?fmt(v):"";document.getElementById("words").textContent=words(v)});
+inp.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();calcular()}});
+document.getElementById("go").addEventListener("click",calcular);
+function calcular(){
+  var v=pm(inp.value),e=document.getElementById("err");e.textContent="";
+  if(!v){e.appendChild(h("div",{class:"err",text:"Escribe el total cobrado para poder calcular."}));inp.focus();return}
+  hist.unshift({ts:Date.now(),total:v});hist=hist.slice(0,30);save();render();
+  document.getElementById("last").scrollIntoView({behavior:"smooth",block:"start"});
+}
+var askDel=false;
+function render(){
+  var box=document.getElementById("last"),hc=document.getElementById("histcard"),c=hist[0];
+  box.textContent="";box.hidden=!c;
+  if(c){
+    var i=info(c.total);
+    box.appendChild(h("h2",{text:"Tu última consulta"}));
+    box.appendChild(h("p",{class:"when",text:"Fecha: "+when(c.ts)}));
+    box.appendChild(h("div",{class:"kpis"},
+      h("div",{},h("div",{class:"n",text:money(c.total)}),h("div",{class:"l",text:"Cobrado hasta la fecha"})),
+      h("div",{},h("div",{class:"n c",text:money(i.comm)}),h("div",{class:"l",text:"Comisión acumulada hasta la fecha"}))));
+    var fb=h("div",{class:"falta"+(i.next?"":" top")});
+    faltantes(i).forEach(function(f){fb.appendChild(h("div",{class:"l",text:f[0]}));fb.appendChild(h("div",{class:"n",text:f[1]}))});
+    box.appendChild(fb);
+    var b=h("div",{class:"btns"});
+    b.appendChild(h("button",{class:"btn",type:"button",text:"Enviar por WhatsApp (texto)",onclick:function(){window.open("https://wa.me/?text="+encodeURIComponent(shareText(c)),"_blank")}}));
+    var two=h("div",{class:"btns two"});
+    if(canShareImg())two.appendChild(h("button",{class:"btn ghost",style:"margin-top:0",type:"button",text:"Compartir imagen",onclick:function(){shareImg(c)}}));
+    two.appendChild(h("button",{class:"btn ghost",style:"margin-top:0",type:"button",text:"Descargar imagen",onclick:function(){downloadImg(c)}}));
+    b.appendChild(two);
+    var two2=h("div",{class:"btns two"});
+    two2.appendChild(h("button",{class:"btn ghost",style:"margin-top:0",type:"button",text:"Actualizar monto",onclick:function(){inp.value=fmt(c.total);inp.dispatchEvent(new Event("input"));window.scrollTo({top:0,behavior:"smooth"});inp.focus()}}));
+    if(askDel){
+      two2.appendChild(h("button",{class:"btn danger",style:"margin-top:0",type:"button",text:"Sí, borrar todo",onclick:function(){hist=[];askDel=false;save();render();toast("Datos borrados")}}));
+      two2.appendChild(h("button",{class:"btn ghost",style:"margin-top:0",type:"button",text:"No, cancelar",onclick:function(){askDel=false;render()}}));
+    }else two2.appendChild(h("button",{class:"btn ghost",style:"margin-top:0",type:"button",text:"Borrar datos",onclick:function(){askDel=true;render()}}));
+    b.appendChild(two2);box.appendChild(b);
+    if(askDel)box.appendChild(h("p",{class:"note",style:"margin-top:10px",text:"Se borrará esta consulta y todas las anteriores."}));
+  }
+  var old=hist.slice(1);hc.hidden=!old.length;var hl=document.getElementById("hist");hl.textContent="";
+  old.forEach(function(o){var i=info(o.total);hl.appendChild(h("div",{class:"hrow"},h("div",{},h("div",{text:"Cobrado "+money(o.total)}),h("div",{class:"d",text:when(o.ts)})),h("div",{style:"text-align:right"},h("b",{text:money(i.comm)}),h("div",{class:"d",text:"comisión"}))))});
+  // topes
+  var t=c?c.total:0,iv=info(t),L=document.getElementById("ladder");L.textContent="";
+  LEVELS.forEach(function(l,k){
+    var done=l.to!==Infinity&&t>=l.to,now=!!c&&k===iv.lv&&!done;
+    var f=l.to===Infinity?(t>l.from?100:0):Math.max(0,Math.min(1,(t-l.from)/(l.to-l.from)))*100;
+    var rng=l.to===Infinity?"desde "+money(l.from)+" en adelante":k===0?"hasta "+money(l.to):"de "+money(l.from)+" a "+money(l.to);
+    var tag=done?"✓ Superado":now?"📍 Estás aquí":(c&&t<l.from?"Faltan "+money(l.from-t):"");
+    L.appendChild(h("div",{class:"step "+(done?"done":now?"now":"")},
+      h("div",{class:"st"},h("div",{},h("b",{text:k===0?"Sin comisión":pct(l.rate)+" de comisión"}),h("div",{class:"rng",text:rng})),h("span",{class:"tag",text:tag})),
+      h("div",{class:"track"},h("div",{class:"fill",style:"width:"+f+"%"}))));
+  });
+}
+load();render();
+</script>
+</body>
+</html>
